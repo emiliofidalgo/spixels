@@ -33,6 +33,9 @@ else()
                          Please use a different C++ compiler.")
 endif()
 
+# Catkin dependencies
+find_package(catkin REQUIRED COMPONENTS roscpp)
+
 # Packages required to work with the library
 find_package(OpenCV REQUIRED) # OpenCV
 find_package(Boost REQUIRED COMPONENTS system filesystem)
@@ -45,7 +48,15 @@ endif()
 # Printing the compiling flags
 message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 
-include_directories(include
+# Defining the package
+catkin_package(
+    INCLUDE_DIRS pSLIC
+    LIBRARIES
+    CATKIN_DEPENDS roscpp
+    DEPENDS
+)
+
+include_directories(pSLIC
                     ${OpenCV_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS})
 
@@ -62,3 +73,13 @@ add_library(pSLIC
 target_link_libraries(pSLIC
             ${OpenCV_LIBRARIES}
             )
+
+# Main file
+add_executable(demo_SLIC
+               src/main.cc
+              )
+target_link_libraries(demo_SLIC
+                      pSLIC
+                      ${OpenCV_LIBRARIES}
+                      ${Boost_LIBRARIES}
+)
