@@ -163,6 +163,13 @@ int main(int argc, char** argv) {
     // Superpixel segmentation
     double t = startTimeMeasure();
     cv::Mat seeds;
+
+    // cv::Mat seeds = cv::Mat::zeros(2, 2, CV_32FC1);
+    // seeds.at<float>(0, 0) = 50.0f;
+    // seeds.at<float>(1, 0) = 1200.0f;
+    // seeds.at<float>(0, 1) = 200.0f;
+    // seeds.at<float>(1, 1) = 1200.0f;
+
     int* labels_preemptiveSLIC;
     PreemptiveSLIC preemptiveSLIC;
     preemptiveSLIC.preemptiveSLIC(img, N, compactness, labels_preemptiveSLIC, seeds);
@@ -174,6 +181,7 @@ int main(int argc, char** argv) {
     int dimy = img.rows;
     cv::Mat L;
     getLabelImage(L, labels_preemptiveSLIC, dimx, dimy);
+    delete[] labels_preemptiveSLIC;
     
     // boundary image B
     cv::Mat B;
