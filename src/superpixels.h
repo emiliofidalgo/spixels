@@ -27,11 +27,11 @@
 namespace spixels {
 
 struct SuperpixelCenter {
-  explicit SuperpixelCenter(const double& l_,
-                            const double& a_,
-                            const double& b_,
-                            const double& x_,
-                            const double& y_);
+  SuperpixelCenter(const double& l_,
+                   const double& a_,
+                   const double& b_,
+                   const double& x_,
+                   const double& y_);
 
   double l;
   double a;
@@ -40,14 +40,16 @@ struct SuperpixelCenter {
   double y;
 };
 
-struct Superpixel {
-  explicit Superpixel(const double& l_,
-                      const double& a_,
-                      const double& b_,
-                      const double& x_,
-                      const double& y_);
-
-  void addPixel(const double& x, const double& y, bool boundary);
+class Superpixel {
+ public:
+  Superpixel(const double& l_,
+             const double& a_,
+             const double& b_,
+             const double& x_,
+             const double& y_);
+  ~Superpixel();
+  void addPixel(const double x, const double y, bool boundary);
+  void print();
 
   SuperpixelCenter center;
   std::vector<cv::Point2f> pixels;

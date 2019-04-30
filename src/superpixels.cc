@@ -41,18 +41,34 @@ Superpixel::Superpixel(
         const double& y_) :
     center(l_, a_, b_, x_, y_) {}
 
-void Superpixel::addPixel(const double& x, const double& y, bool boundary) {
+Superpixel::~Superpixel() {
+  pixels.clear();
+  is_boundary.clear();
+}
+
+void Superpixel::addPixel(const double x, const double y, bool boundary) {
   // Adding the point itself
   cv::Point2f p(x, y);
   pixels.push_back(p);
 
-  // Adding a boundary if needed
+  // // Adding a boundary if needed
   if (boundary) {
       is_boundary.push_back(1);
   } else {
       is_boundary.push_back(0);
   }
 }
+
+void Superpixel::print() {
+  std::cout << "C(" << center.l;
+  std::cout << ", " << center.a;
+  std::cout << ", " << center.b;
+  std::cout << ", " << center.x;
+  std::cout << ", " << center.y;
+  std::cout << ") -- NPix: ";
+  std::cout << pixels.size() << std::endl;
+}
+
 
 void PreemptiveSLICSegmentation::runSegmentation(
     const cv::Mat& I_rgb,
@@ -70,7 +86,7 @@ void PreemptiveSLICSegmentation::runSegmentation(
   I_rgb.copyTo(image_);
 
   // Superpixel segmentation
-  int *labels_preemptiveSLIC;
+  int* labels_preemptiveSLIC;
   std::vector<double> cluster_x;
   std::vector<double> cluster_y;
   std::vector<double> cluster_l;
@@ -115,7 +131,7 @@ void PreemptiveSLICSegmentation::runSegmentation(
           }
       }
 
-      // Adding this pixel to the corresponding Superpixel
+      // Adding this pixel to the corresponding Superpixel      
       superpixels_[curr_lab].addPixel(j, i, is_boundary);
     }
   }
