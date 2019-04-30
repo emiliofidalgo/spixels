@@ -57,6 +57,7 @@ catkin_package(
 )
 
 include_directories(pSLIC
+                    src
                     ${OpenCV_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS})
 
@@ -77,6 +78,7 @@ target_link_libraries(pSLIC
 # Main file
 add_executable(demo_SLIC
                src/main.cc
+               src/superpixels.cc
               )
 target_link_libraries(demo_SLIC
                       pSLIC
