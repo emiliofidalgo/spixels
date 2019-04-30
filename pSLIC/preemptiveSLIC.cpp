@@ -865,7 +865,7 @@ void PreemptiveSLIC::initSeeds(const Mat& I,
 
 
 
-void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double compactness, int*& klabels, Mat& seeds, vector<double>& clsx, vector<double>& clsy)
+void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double compactness, int*& klabels, Mat& seeds, vector<double>& clsx, vector<double>& clsy, vector<double>& clsl, vector<double>& clsa, vector<double>& clsb)
 {
    
   const int sz = I_rgb.cols*I_rgb.rows;
@@ -928,7 +928,10 @@ void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double 
   if(nlabels) delete [] nlabels;
 
   clsx = m_kseedsx;
-  clsy = m_kseedsy;  
+  clsy = m_kseedsy;
+  clsl = m_kseedsl;  
+  clsa = m_kseedsa;
+  clsb = m_kseedsb;
 }
 
 

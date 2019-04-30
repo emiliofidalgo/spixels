@@ -198,9 +198,12 @@ int main(int argc, char **argv) {
     int *labels_preemptiveSLIC;
     std::vector<double> cluster_x;
     std::vector<double> cluster_y;
+    std::vector<double> cluster_l;
+    std::vector<double> cluster_a;
+    std::vector<double> cluster_b;
     double t = startTimeMeasure();
     PreemptiveSLIC preemptiveSLIC;
-    preemptiveSLIC.preemptiveSLIC(img, nspix, compactness, labels_preemptiveSLIC, seeds, cluster_x, cluster_y);
+    preemptiveSLIC.preemptiveSLIC(img, nspix, compactness, labels_preemptiveSLIC, seeds, cluster_x, cluster_y, cluster_l, cluster_a, cluster_b);
     t = stopTimeMeasure(t);
     std::cout << "Time in ms: " << t * 1000 << std::endl;
 

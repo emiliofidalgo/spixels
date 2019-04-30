@@ -65,7 +65,7 @@ public:
 	virtual ~PreemptiveSLIC();
     
     // currently seed should be an empty cv::Mat --> otherwise the number of changes in the clusters is potentially not computed correctly
-    void preemptiveSLIC(const cv::Mat& I_rgb, const int k, const double compactness, int*& klabels, cv::Mat& seeds, vector<double>& clsx, vector<double>& clsy);
+    void preemptiveSLIC(const cv::Mat& I_rgb, const int k, const double compactness, int*& klabels, cv::Mat& seeds, vector<double>& clsx, vector<double>& clsy, vector<double>& clsl, vector<double>& clsa, vector<double>& clsb);
     void initSeeds(const cv::Mat& I,const int n, std::vector<double>& kseedsx, std::vector<double>& kseedsy, std::vector<double>& kseedsl, std::vector<double>& kseedsa,  std::vector<double>& kseedsb, int* klabels, bool init_labels_flag, cv::Mat& seeds);
     
     
