@@ -54,6 +54,11 @@ bool fitsOnImage(const cv::Point2f& point, const cv::Mat& img) {
   return (point.x > 0 && point.x < img.cols) && (point.y > 0 && point.y < img.rows);
 }
 
+float euclideanDist(cv::Point2f& a, cv::Point2f& b) {
+  cv::Point2f diff = a - b;
+  return cv::sqrt(diff.x*diff.x + diff.y*diff.y);
+}
+
 int main(int argc, char **argv) {
 
   // Loading image filenames
@@ -63,7 +68,7 @@ int main(int argc, char **argv) {
 
   // Parameters
   int N = 500;
-  unsigned min_tracks = 300;
+  unsigned min_tracks = 200;
   double compactness = 40;
   bool tracking_init = false;
   std::vector<cv::Point2f> points_prev, points;
@@ -128,15 +133,45 @@ int main(int argc, char **argv) {
             20, // Maximum number of iterations
             0.3 // Minimum change per iteration
             ));
+    
+    // Computing Optical Flow
+    std::vector<uchar> features_found_aux;
+    std::vector<cv::Point2f> points_prev_aux;
+    cv::calcOpticalFlowPyrLK(
+        img,                  // Previous image
+        img_prev,             // Next image
+        points,               // Previous set of points (from img_prev)
+        points_prev_aux,      // Next set of points (from img)
+        features_found_aux,   // Output vector, each is 1 for tracked
+        cv::noArray(),        // Output vector, lists errors (optional)
+        cv::Size(21, 21),     // Search window size
+        3,                    // Maximum pyramid level to construct
+        cv::TermCriteria(
+            cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS,
+            20, // Maximum number of iterations
+            0.3 // Minimum change per iteration
+            ));
 
     // Filtering and postprocessing the resulting tracks
+    // unsigned correct_tracks = 0;
+    // for (unsigned j = 0; j < points.size(); j++) {
+    //   if (!features_found[j] || !fitsOnImage(points[j], img)) {
+    //     points[j] = points_prev[j];
+    //   } else {
+    //     correct_tracks++;
+    //   }
+    // }
+
     unsigned correct_tracks = 0;
     for (unsigned j = 0; j < points.size(); j++) {
-      if (!features_found[j] || !fitsOnImage(points[j], img)) {
-        points[j] = points_prev[j];
-      } else {
-        correct_tracks++;
-      }
+      if (features_found[j] && 
+          features_found_aux[j] &&
+          fitsOnImage(points[j], img) &&
+          euclideanDist(points_prev[j], points_prev_aux[j]) < 1.0f) {
+            correct_tracks++;
+          } else {
+            points[j] = points_prev[j];
+          }
     }
 
     std::cout << "Correct tracks: " << correct_tracks << std::endl;
