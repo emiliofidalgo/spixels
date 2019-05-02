@@ -69,6 +69,32 @@ void Superpixel::print() {
   std::cout << pixels.size() << std::endl;
 }
 
+void PreemptiveSLICSegmentation::extractSuperpixels(std::vector<Superpixel>& spixs) {
+  spixs.clear();
+  for (unsigned i = 0; i < cluster_x_.size(); i++) {
+    Superpixel sp(
+      cluster_l_[i],
+      cluster_a_[i],
+      cluster_b_[i],
+      cluster_x_[i],
+      cluster_y_[i]);
+    
+    spixs.push_back(sp);
+  }
+
+  // Adding pixels to superpixels
+  int dimx = image_.cols;
+  int dimy = image_.rows;
+  int label;
+  bool is_boundary;
+  for (int i = 0; i < dimy; i++) {
+    for (int j = 0; j < dimx; j++) {
+      label = labels_.at<int>(i, j);
+      is_boundary = boundaries_.at<uchar>(i, j);
+      spixs[label].addPixel(j, i, is_boundary);
+    }
+  }
+}
 
 void PreemptiveSLICSegmentation::runSegmentation(
     const cv::Mat& I_rgb,
@@ -80,62 +106,73 @@ void PreemptiveSLICSegmentation::runSegmentation(
   if (!image_.empty()) image_.release();
   if (!labels_.empty()) labels_.release();
   if (!boundaries_.empty()) boundaries_.release();
-  superpixels_.clear();
+  cluster_x_.clear();
+  cluster_y_.clear();
+  cluster_l_.clear();
+  cluster_a_.clear();
+  cluster_b_.clear();
 
   // Copy the current frame for the segmentation
   I_rgb.copyTo(image_);
 
   // Superpixel segmentation
   int* labels_preemptiveSLIC;
-  std::vector<double> cluster_x;
-  std::vector<double> cluster_y;
-  std::vector<double> cluster_l;
-  std::vector<double> cluster_a;
-  std::vector<double> cluster_b;
   PreemptiveSLIC preemptiveSLIC;
-  preemptiveSLIC.preemptiveSLIC(I_rgb, k, compactness, labels_preemptiveSLIC, seeds, cluster_x, cluster_y, cluster_l, cluster_a, cluster_b);
+  preemptiveSLIC.preemptiveSLIC(I_rgb, k, compactness, labels_preemptiveSLIC, seeds, cluster_x_, cluster_y_, cluster_l_, cluster_a_, cluster_b_);
 
-  // Initializing the set of superpixels
-  for (unsigned i = 0; i < cluster_x.size(); i++) {
-    Superpixel sp(
-      cluster_l[i],
-      cluster_a[i],
-      cluster_b[i],
-      cluster_x[i],
-      cluster_y[i]);
-
-    superpixels_.push_back(sp);
-  }
-
-  // Postprocessing the segmentation
+  // // Postprocessing the segmentation
   int dimx = image_.cols;
   int dimy = image_.rows;
   labels_     = cv::Mat(dimy, dimx, CV_32SC1);
   boundaries_ = cv::Mat::zeros(dimy, dimx, CV_8UC1);
+
+  // Computing labels
+  int idx;
+  int curr_lab;
   for (int i = 0; i < dimy; i++) {
     for (int j = 0; j < dimx; j++) {
-      int idx = dimx * i + j; // row major order
-      int curr_lab = labels_preemptiveSLIC[idx];
+      idx = dimx * i + j; // row major order
+      curr_lab = labels_preemptiveSLIC[idx];
 
       // Setting the label
       labels_.at<int>(i, j) = curr_lab;
-
-      // Detecting if the pixel is a boundary
-      bool is_boundary = false;
-      if (i > 0 && i < dimy - 1 && j > 0 && j < dimx - 1) {
-          int lab_nexti = labels_preemptiveSLIC[dimx * (i + 1) + j];
-          int lab_nextj = labels_preemptiveSLIC[dimx * i + (j + 1)];
-          if (curr_lab != lab_nexti || curr_lab != lab_nextj) {
-              boundaries_.at<uchar>(i, j) = 1;
-              is_boundary = true;
-          }
-      }
-
-      // Adding this pixel to the corresponding Superpixel      
-      superpixels_[curr_lab].addPixel(j, i, is_boundary);
     }
   }
 
+  // Computing boundaries
+  for (int i = 1; i < dimy - 1; i++) {
+    for (int j = 1; j < dimx - 1; j++) {
+      if (labels_.at<int>(i, j) != labels_.at<int>(i + 1, j) || labels_.at<int>(i, j) != labels_.at<int>(i, j + 1))
+      boundaries_.at<uchar>(i, j) = 1;
+    }
+  }
+
+  // // Adding pixels to superpixels
+  // int label;
+  // bool is_boundary;
+  // for (int i = 0; i < dimy; i++) {
+  //   for (int j = 0; j < dimx; j++) {
+  //     label = labels_.at<int>(i, j);
+  //     is_boundary = boundaries_.at<uchar>(i, j);
+  //     superpixels_[label].addPixel(j, i, is_boundary);
+  //   }
+  // }
+
+  //     // Detecting if the pixel is a boundary
+  //     bool is_boundary = false;
+  //     if (i > 0 && i < dimy - 1 && j > 0 && j < dimx - 1) {
+  //         int lab_nexti = labels_preemptiveSLIC[dimx * (i + 1) + j];
+  //         int lab_nextj = labels_preemptiveSLIC[dimx * i + (j + 1)];
+  //         if (curr_lab != lab_nexti || curr_lab != lab_nextj) {
+  //             boundaries_.at<uchar>(i, j) = 1;
+  //             is_boundary = true;
+  //         }
+  //     }
+
+  //     // Adding this pixel to the corresponding Superpixel      
+  //     superpixels_[curr_lab].addPixel(j, i, is_boundary);
+  //   }
+  // }
   delete[] labels_preemptiveSLIC;
 }
 
@@ -157,8 +194,8 @@ void PreemptiveSLICSegmentation::drawSegmentationImg(cv::Mat& img) {
 
 void PreemptiveSLICSegmentation::getCenters(std::vector<cv::Point2f>& points) {
   points.clear();
-  for (unsigned i = 0; i < superpixels_.size(); i++) {
-    cv::Point2f p(superpixels_[i].center.x, superpixels_[i].center.y);
+  for (unsigned i = 0; i < cluster_x_.size(); i++) {
+    cv::Point2f p(cluster_x_[i], cluster_y_[i]);
     points.push_back(p);
   }
 }

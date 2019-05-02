@@ -104,6 +104,9 @@ int main(int argc, char **argv) {
     // Segmentation
     segm.runSegmentation(img, nspix, compactness, seeds);
 
+    // std::vector<spixels::Superpixel> superpixels;
+    // segm.extractSuperpixels(superpixels);
+
     // Copying points    
     points.clear();
     points_prev.clear();
@@ -127,21 +130,6 @@ int main(int argc, char **argv) {
             ));
 
     // Filtering and postprocessing the resulting tracks
-    // size_t j, k;
-    // unsigned correct_tracks = 0;
-    // for (j = 0, k = 0; j < points.size(); j++) {
-    //   // No tracking feature
-    //   // if (!features_found[j] || !fitsOnImage(points[j], img))
-    //   //   continue;
-    //   if (!features_found[j] || !fitsOnImage(points[j], img))
-    //     points[k] = points_prev[j];
-    //   else {
-    //     points[k] = points[j];
-    //     correct_tracks++;
-    //   }
-    //   k += 1;
-    // }
-    // points.resize(k);
     unsigned correct_tracks = 0;
     for (unsigned j = 0; j < points.size(); j++) {
       if (!features_found[j] || !fitsOnImage(points[j], img)) {
@@ -188,6 +176,7 @@ int main(int argc, char **argv) {
     for (unsigned j = 0; j < points_prev.size(); j++) {
       cv::circle(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), 2, cv::Scalar(255, 0, 0), -1);
       cv::circle(overlay_img, cv::Point2f(points[j].x, points[j].y), 2, cv::Scalar(0, 0, 255), -1);
+      cv::line(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), cv::Point2f(points[j].x, points[j].y), cv::Scalar(0, 255, 255), 2);
     }
 
     cv::imshow("pSLIC", overlay_img);
