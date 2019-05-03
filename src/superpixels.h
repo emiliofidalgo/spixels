@@ -66,13 +66,15 @@ class PreemptiveSLICSegmentation {
     const double& compactness,
     cv::Mat& seeds);  
 
-  void extractSuperpixels(std::vector<Superpixel>& spixs);
+  void describeSuperpixels(cv::Mat& desc);
   void getCenters(std::vector<cv::Point2f>& points);  
   void drawSegmentationImg(cv::Mat& img);
-  
+  void drawSuperpixels(cv::Mat& img);
   
  private:
+  unsigned sp_count_;
   cv::Mat image_;
+  cv::Mat image_lab_;
   cv::Mat labels_;
   cv::Mat boundaries_;
   std::vector<double> cluster_x_;

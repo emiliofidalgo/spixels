@@ -69,31 +69,7 @@ void Superpixel::print() {
   std::cout << pixels.size() << std::endl;
 }
 
-void PreemptiveSLICSegmentation::extractSuperpixels(std::vector<Superpixel>& spixs) {
-  spixs.clear();
-  for (unsigned i = 0; i < cluster_x_.size(); i++) {
-    Superpixel sp(
-      cluster_l_[i],
-      cluster_a_[i],
-      cluster_b_[i],
-      cluster_x_[i],
-      cluster_y_[i]);
-    
-    spixs.push_back(sp);
-  }
-
-  // Adding pixels to superpixels
-  int dimx = image_.cols;
-  int dimy = image_.rows;
-  int label;
-  bool is_boundary;
-  for (int i = 0; i < dimy; i++) {
-    for (int j = 0; j < dimx; j++) {
-      label = labels_.at<int>(i, j);
-      is_boundary = boundaries_.at<uchar>(i, j);
-      spixs[label].addPixel(j, i, is_boundary);
-    }
-  }
+void PreemptiveSLICSegmentation::describeSuperpixels(cv::Mat& desc) {
 }
 
 void PreemptiveSLICSegmentation::runSegmentation(
@@ -104,6 +80,7 @@ void PreemptiveSLICSegmentation::runSegmentation(
 
   // Clearing data structures
   if (!image_.empty()) image_.release();
+  if (!image_lab_.empty()) image_lab_.release();
   if (!labels_.empty()) labels_.release();
   if (!boundaries_.empty()) boundaries_.release();
   cluster_x_.clear();
@@ -118,7 +95,8 @@ void PreemptiveSLICSegmentation::runSegmentation(
   // Superpixel segmentation
   int* labels_preemptiveSLIC;
   PreemptiveSLIC preemptiveSLIC;
-  preemptiveSLIC.preemptiveSLIC(I_rgb, k, compactness, labels_preemptiveSLIC, seeds, cluster_x_, cluster_y_, cluster_l_, cluster_a_, cluster_b_);
+  preemptiveSLIC.preemptiveSLIC(I_rgb, k, compactness, labels_preemptiveSLIC, seeds, cluster_x_, cluster_y_, cluster_l_, cluster_a_, cluster_b_, image_lab_);
+  sp_count_ = cluster_x_.size();
 
   // // Postprocessing the segmentation
   int dimx = image_.cols;
@@ -176,6 +154,14 @@ void PreemptiveSLICSegmentation::runSegmentation(
   delete[] labels_preemptiveSLIC;
 }
 
+void PreemptiveSLICSegmentation::getCenters(std::vector<cv::Point2f>& points) {
+  points.clear();
+  for (unsigned i = 0; i < cluster_x_.size(); i++) {
+    cv::Point2f p(cluster_x_[i], cluster_y_[i]);
+    points.push_back(p);
+  }
+}
+
 void PreemptiveSLICSegmentation::drawSegmentationImg(cv::Mat& img) {
   image_.copyTo(img);
   int dimx = image_.cols;
@@ -192,11 +178,30 @@ void PreemptiveSLICSegmentation::drawSegmentationImg(cv::Mat& img) {
   }
 }
 
-void PreemptiveSLICSegmentation::getCenters(std::vector<cv::Point2f>& points) {
-  points.clear();
-  for (unsigned i = 0; i < cluster_x_.size(); i++) {
-    cv::Point2f p(cluster_x_[i], cluster_y_[i]);
-    points.push_back(p);
+void PreemptiveSLICSegmentation::drawSuperpixels(cv::Mat& img) {
+  drawSegmentationImg(img);
+
+  // Generating colours
+  cv::RNG rng(12345);
+  cv::Scalar colors[sp_count_];
+  for (unsigned i = 0; i < sp_count_; i++) {
+    colors[i] = cv::Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
+  }
+
+  int dimx = image_.cols;
+  int dimy = image_.rows;
+  int label;
+  bool is_boundary;
+  for (int i = 0; i < dimy; i++) {
+    for (int j = 0; j < dimx; j++) {
+      label = labels_.at<int>(i, j);
+      is_boundary = boundaries_.at<uchar>(i, j);
+      if (!is_boundary) {
+        img.at<cv::Vec3b>(i, j)[0] = colors[label].val[0];
+        img.at<cv::Vec3b>(i, j)[1] = colors[label].val[1];
+        img.at<cv::Vec3b>(i, j)[2] = colors[label].val[2];
+      }
+    }
   }
 }
 

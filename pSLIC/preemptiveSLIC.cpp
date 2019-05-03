@@ -865,7 +865,7 @@ void PreemptiveSLIC::initSeeds(const Mat& I,
 
 
 
-void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double compactness, int*& klabels, Mat& seeds, vector<double>& clsx, vector<double>& clsy, vector<double>& clsl, vector<double>& clsa, vector<double>& clsb)
+void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double compactness, int*& klabels, Mat& seeds, vector<double>& clsx, vector<double>& clsy, vector<double>& clsl, vector<double>& clsa, vector<double>& clsb, cv::Mat& I_lab)
 {
    
   const int sz = I_rgb.cols*I_rgb.rows;
@@ -883,7 +883,7 @@ void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double 
   klabels = new int[sz];
 
 
-  Mat I_lab;
+  // Mat I_lab;
   cvtColor(I_rgb, I_lab, CV_BGR2Lab); // I_lab is CV_8UC3
   
   // fill lab vectors
