@@ -194,6 +194,11 @@ int main(int argc, char **argv) {
       }
     }
 
+    // Describing superpixels
+    std::vector<cv::KeyPoint> kps;
+    cv::Mat desc;
+    segm.describeSuperpixels(kps, desc);
+
     // --- Image Visualization ---
     // ---------------------------
 

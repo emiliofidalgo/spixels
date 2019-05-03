@@ -910,6 +910,8 @@ void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double 
   if(perturbseeds) DetectLabEdges(m_lvec, m_avec, m_bvec, m_width, m_height, edgemag);
   
   initSeeds(I_lab, k, m_kseedsx, m_kseedsy, m_kseedsl, m_kseedsa,  m_kseedsb, klabels, 0 /*init labels*/, seeds);
+  // std::cout << "Seeds vector: " << m_kseedsl.size() << std::endl;
+  // std::cout << "Seeds Mat Cols " << seeds.cols << std::endl;
   
 //   GetLABXYSeeds_ForGivenStepSize(kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, STEP, perturbseeds, edgemag);
   
@@ -918,14 +920,19 @@ void PreemptiveSLIC::preemptiveSLIC(const Mat& I_rgb, const int k, const double 
   PerformSuperpixelSLIC_preemptive(m_kseedsl, m_kseedsa, m_kseedsb, m_kseedsx, m_kseedsy, klabels, compactness);
   
   int numlabels = m_kseedsl.size();
-  int* nlabels = new int[sz];
-  EnforceLabelConnectivity(klabels, m_width, m_height, nlabels, numlabels, double(sz)/double(m_sx*m_sy));
+  // std::cout << "Original Spxs " << numlabels << std::endl;
 
-  int* swapV = klabels;
-  klabels = nlabels;
-  nlabels = swapV;  
+  // --- Uncomment this section for enforcing label connectivity ---
+  // int* nlabels = new int[sz];
+  // EnforceLabelConnectivity(klabels, m_width, m_height, nlabels, numlabels, double(sz)/double(m_sx*m_sy));
+  // std::cout << "After Enforce Connectivity " << numlabels << std::endl;
+
+  // int* swapV = klabels;
+  // klabels = nlabels;
+  // nlabels = swapV;  
   
-  if(nlabels) delete [] nlabels;
+  // if(nlabels) delete [] nlabels;
+  // ---
 
   clsx = m_kseedsx;
   clsy = m_kseedsy;

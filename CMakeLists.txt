@@ -45,12 +45,15 @@ if (OPENMP_FOUND)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+find_path(FFTW_INCLUDE_DIR fftw3.h  ${FFTW_INCLUDE_DIRS})
+find_library(FFTW_LIBRARY fftw3 ${FFTW_LIBRARY_DIRS})
+
 # Printing the compiling flags
 message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 
 # Defining the package
 catkin_package(
-    INCLUDE_DIRS pSLIC
+    INCLUDE_DIRS pSLIC src
     LIBRARIES
     CATKIN_DEPENDS roscpp
     DEPENDS
@@ -59,7 +62,8 @@ catkin_package(
 include_directories(pSLIC
                     src
                     ${OpenCV_INCLUDE_DIRS}
-                    ${Boost_INCLUDE_DIRS})
+                    ${Boost_INCLUDE_DIRS}
+                    ${FFTW_INCLUDE_DIR})
 
 link_directories(${OpenCV_LIBRARIES}
                  ${Boost_LIBRARIES})
@@ -75,6 +79,14 @@ target_link_libraries(pSLIC
             ${OpenCV_LIBRARIES}
             )
 
+# LBP
+add_library(LBP
+  STATIC
+  src/LBP.cpp 
+)
+target_link_libraries(LBP
+            ${OpenCV_LIBS} ${FFTW_LIBRARY})
+
 # Main file
 add_executable(demo_SLIC
                src/main.cc
@@ -82,6 +94,7 @@ add_executable(demo_SLIC
               )
 target_link_libraries(demo_SLIC
                       pSLIC
+                      LBP
                       ${OpenCV_LIBRARIES}
                       ${Boost_LIBRARIES}
 )

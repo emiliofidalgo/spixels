@@ -22,6 +22,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "LBP.hpp"
 #include "preemptiveSLIC.h"
 
 namespace spixels {
@@ -66,7 +67,7 @@ class PreemptiveSLICSegmentation {
     const double& compactness,
     cv::Mat& seeds);  
 
-  void describeSuperpixels(cv::Mat& desc);
+  void describeSuperpixels(std::vector<cv::KeyPoint>& kps, cv::Mat& desc, bool use_rgb = false);
   void getCenters(std::vector<cv::Point2f>& points);  
   void drawSegmentationImg(cv::Mat& img);
   void drawSuperpixels(cv::Mat& img);
