@@ -72,8 +72,10 @@ int main(int argc, char **argv) {
   double compactness = 40;
   bool tracking_init = false;
   std::vector<cv::Point2f> points_prev, points;
-  cv::Mat img_prev;
-  cv::Mat seeds;  
+  std::vector<cv::KeyPoint> kps_prev, kps;
+  cv::Mat desc_prev, desc;
+  cv::Mat img_prev, img;
+  cv::Mat seeds;
 
   spixels::PreemptiveSLICSegmentation segm;
 
@@ -84,10 +86,19 @@ int main(int argc, char **argv) {
     std::cout << "--- Processing image " << i << std::endl;
 
     // Loading and describing the image
-    cv::Mat img = cv::imread(filenames[i]);
+    img = cv::imread(filenames[i]);
     
     if (i == 0) {
       img.copyTo(img_prev);
+      segm.runSegmentation(img, N, compactness, seeds);
+      segm.describeSuperpixels(kps_prev, desc_prev, false);      
+      segm.getCenters(points);
+      tracking_init = true;      
+      seeds = cv::Mat::zeros(2, (int)points.size(), CV_32FC1);
+      for (size_t j = 0; j < points.size(); j++) {
+        seeds.at<float>(0, j) = points[j].y;
+        seeds.at<float>(1, j) = points[j].x;
+      }
       continue;
     }
 
@@ -108,9 +119,8 @@ int main(int argc, char **argv) {
     // Superpixel segmentation
     // Segmentation
     segm.runSegmentation(img, nspix, compactness, seeds);
-
-    // std::vector<spixels::Superpixel> superpixels;
-    // segm.extractSuperpixels(superpixels);
+    // Describing superpixels
+    segm.describeSuperpixels(kps, desc);
 
     // Copying points    
     points.clear();
@@ -163,15 +173,24 @@ int main(int argc, char **argv) {
     // }
 
     unsigned correct_tracks = 0;
+    std::vector<cv::DMatch> matches;
     for (unsigned j = 0; j < points.size(); j++) {
       if (features_found[j] && 
           features_found_aux[j] &&
           fitsOnImage(points[j], img) &&
           euclideanDist(points_prev[j], points_prev_aux[j]) < 1.0f) {
             correct_tracks++;
-          } else {
+            
+            // Storing a correct match
+            cv::DMatch match;
+            match.queryIdx = j;
+            match.trainIdx = j;
+            match.distance = 1.0f;
+
+            matches.push_back(match);
+      } else {
             points[j] = points_prev[j];
-          }
+      }
     }
 
     std::cout << "Correct tracks: " << correct_tracks << std::endl;
@@ -194,36 +213,49 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Describing superpixels
-    std::vector<cv::KeyPoint> kps;
-    cv::Mat desc;
-    segm.describeSuperpixels(kps, desc);
-
     // --- Image Visualization ---
     // ---------------------------
 
-    // overlay image
-    cv::Mat overlay_img;
-    segm.drawSegmentationImg(overlay_img);
+    // // overlay image
+    // cv::Mat overlay_img;
+    // segm.drawSegmentationImg(overlay_img);
 
-    // Printing cluster centers
-    // std::cout << cluster_x.size() << std::endl;
-    // for (unsigned j = 0; j < cluster_x.size(); j++)
-    // {
-    //   cv::circle(R, cv::Point2f(cluster_x[j], cluster_y[j]), 1, cv::Scalar(0, 255, 0));
+    // // Printing cluster centers
+    // // std::cout << cluster_x.size() << std::endl;
+    // // for (unsigned j = 0; j < cluster_x.size(); j++)
+    // // {
+    // //   cv::circle(R, cv::Point2f(cluster_x[j], cluster_y[j]), 1, cv::Scalar(0, 255, 0));
+    // // }
+
+    // for (unsigned j = 0; j < points_prev.size(); j++) {
+    //   cv::circle(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), 2, cv::Scalar(255, 0, 0), -1);
+    //   cv::circle(overlay_img, cv::Point2f(points[j].x, points[j].y), 2, cv::Scalar(0, 0, 255), -1);
+    //   cv::line(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), cv::Point2f(points[j].x, points[j].y), cv::Scalar(0, 255, 255), 2);
+    // }   
+
+    // cv::imshow("pSLIC", overlay_img);
+    // cv::waitKey(5);
+
+    // Showing matches, one by one
+    // cv::Mat matches_img;
+    // for (unsigned i = 0; i < matches.size(); i++) {
+    //   std::vector<cv::DMatch> matches_aux;
+    //   matches_aux.push_back(matches[i]);
+    //   cv::drawMatches(img, kps, img_prev, kps_prev, matches_aux, matches_img);
+
+    //   cv::imshow("pMatches", matches_img);
+    //   cv::waitKey(0);
     // }
 
-    for (unsigned j = 0; j < points_prev.size(); j++) {
-      cv::circle(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), 2, cv::Scalar(255, 0, 0), -1);
-      cv::circle(overlay_img, cv::Point2f(points[j].x, points[j].y), 2, cv::Scalar(0, 0, 255), -1);
-      cv::line(overlay_img, cv::Point2f(points_prev[j].x, points_prev[j].y), cv::Point2f(points[j].x, points[j].y), cv::Scalar(0, 255, 255), 2);
-    }
+    // Showing matches, full
+    cv::Mat matches_img;    
+    cv::drawMatches(img, kps, img_prev, kps_prev, matches, matches_img);
+    cv::imshow("pMatches", matches_img);
+    cv::waitKey(0);  
 
-    cv::imshow("pSLIC", overlay_img);
-    cv::waitKey(5);
-
-    // std::swap(points, points_prev);
     cv::swap(img_prev, img);
+    cv::swap(desc_prev, desc);
+    std::swap(kps_prev, kps);
   }
 
   return 0;
